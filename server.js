@@ -28,7 +28,9 @@ client.connect();
 client.on('message', (channel, tags, message, self) => {
     const isNotBot = tags.username.toLowerCase() !== process.env.TWITCH_BOT_USERNAME;
 
-    if ( !isNotBot ) return;
+    if ( self ) return;
+
+    if (message.match(regexpCommand) === null) return;
 
     const [raw, command, argument] = message.match(regexpCommand);
 
