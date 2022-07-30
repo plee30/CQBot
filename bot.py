@@ -11,7 +11,7 @@ class Bot(commands.Bot):
         # Initialise our Bot with our access token, prefix and a list of channels to join on boot...
         # prefix can be a callable, which returns a list of strings or a string...
         # initial_channels can also be a callable which returns a list of strings...
-        super().__init__(token=access_token, prefix='!', initial_channels=['DeadFracture', 'DeadFractureBot'])
+        super().__init__(token=access_token, prefix='!', initial_channels=['DeadFracture'])
 
     async def event_ready(self):
         # Notify us when everything is ready!
@@ -32,6 +32,8 @@ class Bot(commands.Bot):
         # We must let the bot know we want to handle and invoke our commands...
         await self.handle_commands(message)
 
+    # !team command
+    # Searches @ChampionsQueue on Twitter for their most recent tweet where the specified streamer was mentioned
     @commands.command()
     # Sends link of current team of Champions Queue player
     async def team(self, ctx: commands.Context, *args):
@@ -47,11 +49,68 @@ class Bot(commands.Bot):
         link = link.strip('\"')
         # Link is sent in chat
         await ctx.send(f'{link}')
+    
+    # !join command
+    # Users can use !join on DeadFracture's channel to send DeadFractureBot to their channel
+    # DeadFracture can also use this command to send the bot to anyone's channel
+    @commands.command()
+    async def join(self, ctx: commands.Context, *args):
+        # Username of the person who used the command (sender) as a string
+        sender = str(ctx.author.name)
+        # Channel command was used as a string
+        curChannel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
         
-    # @commands.command()
-    # async def test(self, ctx: commands.Context, *args):
-    #     # Gets the channel the command was called in as a string
-    #     await ctx.send(args)
+        # Can only !join on DeadFracture's channel
+        if (curChannel != "deadfracture"):
+            await ctx.send("Command only available on ttv/DeadFracture")
+            pass
+        else:
+            # If no argument, joins the senders channel
+            if (len(args) == 0):
+                toJoin = [sender]
+                await bot.join_channels(toJoin)
+                await ctx.send(f"Joined {sender}'s channel!")
+            else:
+                # If sender is DeadFracture, bot will be sent
+                if (sender == "deadfracture"): 
+                    channelName = str(args[0])
+                    toJoin = [channelName]
+                    await bot.join_channels(toJoin)
+                    await ctx.send(f"Joined {channelName}!")
+                # If sender is not DeadFracture, bot will not be sent
+                else:
+                    await ctx.send(f"I currently do not support being sent to someone else's channel :(")
+    
+    # !leave command
+    # DeadFracture bot will leave the channel when asked               
+    @commands.command()
+    async def leave(self, ctx: commands.Context, *args):
+        sender = str(ctx.author.name)
+        curChannel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
+        if (len(args) == 0):
+            if (curChannel == sender):
+                toLeave = [sender]
+                await bot.part_channels(toLeave)
+                await ctx.send(f"Left {sender}'s channel!")
+        else:
+            if (sender == "deadfracture"): 
+                channelName = str(args[0])
+                toLeave = [channelName]
+                await bot.part_channels(toLeave)
+                await ctx.send(f"Left {channelName}!")
+            else:
+                await ctx.send(f"I currently do not support being sent to someone else's channel :(")
+
+    @commands.command()
+    async def help(self, ctx: commands.Context):
+        # Gets the channel the command was called in as a string
+        await ctx.send(f"!team (optional: username), !join, !leave")
+
+    @commands.command()
+    async def test(self, ctx: commands.Context, *args):
+        # Gets the channel the command was called in as a string
+        await ctx.send(f"User is {ctx.author.name}")
+        await ctx.send(f"Args are {args}")
 
 
 bot = Bot()
