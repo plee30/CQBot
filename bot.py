@@ -115,11 +115,11 @@ class Bot(commands.Bot):
         # Gets the channel the command was called in as a string
         await ctx.send(f"!team (optional: username), !join, !leave")
 
-    @commands.command()
-    async def test(self, ctx: commands.Context, *args):
-        # Gets the channel the command was called in as a string
-        await ctx.send(f"User is {ctx.author.name}")
-        await ctx.send(f"Args are {args}")
+    # @commands.command()
+    # async def test(self, ctx: commands.Context, *args):
+    #     # Gets the channel the command was called in as a string
+    #     await ctx.send(f"User is {ctx.author.name}")
+    #     await ctx.send(f"Args are {args}")
     
     @commands.command()
     async def where(self, ctx: commands.Context):
