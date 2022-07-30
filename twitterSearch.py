@@ -1,10 +1,10 @@
-import requests
-import os
-import json
 import datetime
+import json
+import os
+
+import requests
 
 bearer_token = os.environ.get("BEARER_TOKEN")
-#bearer_token = "N/A"
 player = ""
 
 # Gets time for search parameter
@@ -42,6 +42,4 @@ def search(player: str):
     if (json_response['meta']['result_count'] == 0):
         return("Game could not be found.")
     twitter_variable = json_response['includes']['media'][0]['url']
-    #print(twitter_variable)
     return(json.dumps(twitter_variable, indent=4, sort_keys=True))
-    #print(json.dumps(json_response, indent=4, sort_keys=True))
