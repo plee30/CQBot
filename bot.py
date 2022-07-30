@@ -2,6 +2,7 @@ from twitchio.ext import commands
 
 # importing functions in twitterSearch.py
 from twitterSearch import *
+import database
 
 access_token = os.environ.get("TWITCH_ACCESS_TOKEN")
 
@@ -11,7 +12,7 @@ class Bot(commands.Bot):
         # Initialise our Bot with our access token, prefix and a list of channels to join on boot...
         # prefix can be a callable, which returns a list of strings or a string...
         # initial_channels can also be a callable which returns a list of strings...
-        super().__init__(token=access_token, prefix='!', initial_channels=['DeadFracture'])
+        super().__init__(token=access_token, prefix='!', initial_channels=database.list())
 
     async def event_ready(self):
         # Notify us when everything is ready!
@@ -68,13 +69,15 @@ class Bot(commands.Bot):
             # If no argument, joins the senders channel
             if (len(args) == 0):
                 toJoin = [sender]
+                database.add(sender)
                 await bot.join_channels(toJoin)
                 await ctx.send(f"Joined {sender}'s channel!")
             else:
                 # If sender is DeadFracture, bot will be sent
                 if (sender == "deadfracture"): 
-                    channelName = str(args[0])
+                    channelName = str(args[0]).lower()
                     toJoin = [channelName]
+                    database.add(channelName)
                     await bot.join_channels(toJoin)
                     await ctx.send(f"Joined {channelName}!")
                 # If sender is not DeadFracture, bot will not be sent
@@ -89,13 +92,19 @@ class Bot(commands.Bot):
         curChannel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
         if (len(args) == 0):
             if (curChannel == sender):
+                if sender == "deadfracture":
+                    return
                 toLeave = [sender]
+                database.remove(sender)
                 await bot.part_channels(toLeave)
                 await ctx.send(f"Left {sender}'s channel!")
         else:
             if (sender == "deadfracture"): 
-                channelName = str(args[0])
+                channelName = str(args[0]).lower()
+                if channelName == "deadfracture":
+                    return               
                 toLeave = [channelName]
+                database.remove(channelName)
                 await bot.part_channels(toLeave)
                 await ctx.send(f"Left {channelName}!")
             else:
@@ -111,6 +120,11 @@ class Bot(commands.Bot):
         # Gets the channel the command was called in as a string
         await ctx.send(f"User is {ctx.author.name}")
         await ctx.send(f"Args are {args}")
+    
+    @commands.command()
+    async def where(self, ctx: commands.Context):
+        # Gets the channel the command was called in as a string
+        await ctx.send(f"{database.list()}")
 
 
 bot = Bot()
