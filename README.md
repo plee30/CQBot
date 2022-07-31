@@ -15,3 +15,4 @@ If you would like to add this bot to your channel, you can do "!join" in my chan
 # Example
 
 ![https://j.gifs.com/K8R59Y.gif](https://j.gifs.com/K8R59Y.gif)
+https://j.gifs.com/K8R59Y.gif
