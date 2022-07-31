@@ -14,5 +14,6 @@ If you would like to add this bot to your channel, you can do "!join" in my chan
 
 # Example
 
-![https://j.gifs.com/K8R59Y.gif](https://j.gifs.com/K8R59Y.gif)
+![Demo](https://user-images.githubusercontent.com/63633754/182012354-15cd819a-23dc-4715-bfac-74dcbf808f6e.gif)
+
 https://j.gifs.com/K8R59Y.gif
