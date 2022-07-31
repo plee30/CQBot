@@ -15,4 +15,4 @@ If you would like to add this bot to your channel, you can do "!join" in my chan
 # Example
 
 
-![cqbot](https://user-images.githubusercontent.com/63633754/182012447-3418ea16-9495-41fc-a0d2-00f1ac6d0eff.gif)
+![cqbot](https://www.youtube.com/watch?v=xA8_HZGzu4k)
