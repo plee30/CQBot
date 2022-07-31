@@ -14,4 +14,4 @@ If you would like to add this bot to your channel, you can do "!join" in my chan
 
 # Example
 
-[![Demo](https://j.gifs.com/K8R59Y.gif)](https://www.twitch.tv/deadfracture)
+![Demo](https://j.gifs.com/K8R59Y.gif)
