@@ -14,5 +14,4 @@ If you would like to add this bot to your channel, you can do "!join" in my chan
 
 # Example
 
-
-![cqbot](https://www.youtube.com/watch?v=xA8_HZGzu4k)
+[![CQBot Example](http://img.youtube.com/vi/watch?v=xA8_HZGzu4k/0.jpg)](http://www.youtube.com/watch?v=Ywatch?v=xA8_HZGzu4k "CQBot Example")
