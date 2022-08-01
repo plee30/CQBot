@@ -2,9 +2,11 @@ from twitchio.ext import commands
 
 # importing functions in twitterSearch.py
 from twitterSearch import *
+from lolSearch import *
 import database
 
 access_token = os.environ.get("TWITCH_ACCESS_TOKEN")
+regions = ["BR1", "EUN1", "EUW1", "JP1", "KR", "LA1", "LA2", "NA1", "OC1", "TR1", "RU"]
 
 class Bot(commands.Bot):
 
@@ -109,11 +111,25 @@ class Bot(commands.Bot):
                 await ctx.send(f"Left {channelName}!")
             else:
                 await ctx.send(f"I currently do not support being sent to someone else's channel :(")
+                
+    @commands.command()
+    async def challenger(self, ctx: commands.Context, *args):
+        if (len(args) == 0) or (str(args[0].upper()) not in regions):
+            print(str(args[0].upper()))
+            print(regions)
+            await ctx.send(f"Please specify a region (BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, TR1, RU)")
+        else:
+            reg = str(args[0]).upper()
+            await ctx.send(lowest(reg))
 
     @commands.command()
     async def help(self, ctx: commands.Context):
         # Gets the channel the command was called in as a string
         await ctx.send(f"!team (optional: username), !join, !leave")
+            
+        # Gets the lowest Challenger player in the region
+        await ctx.send(f"!team (optional: username), !join, !leave")
+        
 
     # @commands.command()
     # async def test(self, ctx: commands.Context, *args):
