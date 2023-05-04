@@ -19,3 +19,6 @@ Also added a !challenger (region) command to show the Summoner Name & LP of the 
 # Example
 
 [![CQBot Example](http://img.youtube.com/vi/watch?v=xA8_HZGzu4k/0.jpg)](https://www.youtube.com/watch?v=xA8_HZGzu4k "CQBot Example")
+
+# Disclaimer
+This bot is not endorsed by Riot Games and does not reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games and all associated properties are trademarks or registered trademarks of Riot Games, Inc
