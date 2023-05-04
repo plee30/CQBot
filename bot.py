@@ -1,9 +1,32 @@
 from twitchio.ext import commands
 
 # importing functions in twitterSearch.py
-from twitterSearch import *
 from lolSearch import *
-import database
+import sqlite3, datetime
+import database, factor
+
+# Connect to the database
+conn = sqlite3.connect('cache.db')
+c = conn.cursor()
+
+c.execute(
+    """CREATE TABLE IF NOT EXISTS streamers (
+        id INTEGER PRIMARY KEY,
+        twitch_id TEXT NOT NULL,
+        factor_id TEXT,
+        UNIQUE(twitch_id)
+    )""")
+
+c.execute(
+    """CREATE TABLE IF NOT EXISTS cache (
+        id INTEGER PRIMARY KEY,
+        team TEXT,
+        update_time timestamp,
+        twitch_id TEXT UNIQUE NOT NULL,
+        FOREIGN KEY (twitch_id)
+            REFERENCES streamers (twitch_id)
+    )""")
+
 
 access_token = os.environ.get("TWITCH_ACCESS_TOKEN")
 regions = ["BR1", "EUN1", "EUW1", "JP1", "KR", "LA1", "LA2", "NA1", "OC1", "TR1", "RU"]
@@ -36,22 +59,78 @@ class Bot(commands.Bot):
         await self.handle_commands(message)
 
     # !team command
-    # Searches @ChampionsQueue on Twitter for their most recent tweet where the specified streamer was mentioned
+    # Searches either a cache or Factor.gg to get the players in the game where the current streamer is playing
+    # Check cache to see if there is an entry within the past 5 minutes.
+    # If not, call search and update the cache.
     @commands.command()
-    # Sends link of current team of Champions Queue player
-    async def team(self, ctx: commands.Context, *args):
-        # If no argument is given, will search for the streamer the command was called in
-        if (len(args) == 0):
-            toSearch = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
-        # Otherwise will search for the player specified
+    async def team(self, ctx: commands.Context):
+        channel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
+        twitch_id = [channel]
+        # If user does not exist in the cache, call search and update the cache.
+        c.execute("SELECT * FROM cache WHERE twitch_id = ?", (twitch_id))
+        curCursor = c.fetchone()
+        if curCursor is None:
+            c.execute("SELECT * FROM streamers WHERE twitch_id = ?", (twitch_id))
+            curCursor = c.fetchone()
+            if curCursor[2] == '':
+                await ctx.send(f'No Champions Queue name found, please update with !cqname')
+            else:
+                # Search will return the string to be printed
+                # curCursor format is (id, 'twitch name', 'Champions Queue name')
+                output = factor.search(curCursor[2])
+                if output is None:
+                    await ctx.send(f'Match not found, if this is an error, please verify !cqname is set correctly')
+                else:
+                    # Updates cache
+                    currentTime = datetime.datetime.now()
+                    c.execute(
+                        "REPLACE into cache (team, update_time, twitch_id) VALUES (?, ?, ?) ", (
+                            output,
+                            currentTime,
+                            channel
+                        )
+                    )
+                    conn.commit()
+                    await ctx.send(f'{output}')
+        # User exists in cache, check if version in cache is less than 5 minutes old.
+        # If version in cache was created in last 5 minutes, use that
+        # Otherwise, perform search
         else:
-            toSearch = str(args[0])
-        # Link is gotten with the search command in twitterSearch.py
-        link = search(toSearch)
-        # Remove quotation marks at the beginning and end of the string
-        link = link.strip('\"')
+            c.execute("SELECT * FROM streamers WHERE twitch_id = ?", (twitch_id))
+            curCursor = c.fetchone()
+            if curCursor[2] == '':
+                await ctx.send(f'No Champions Queue name found, please update with !cqname')
+            else:
+                c.execute("SELECT * FROM cache WHERE twitch_id = ?", (twitch_id))
+                curCursor = c.fetchone()
+                # curCursor[2] is the update_time
+                currentTime = datetime.datetime.now()
+                cacheTime = datetime.datetime.strptime(curCursor[2], '%Y-%m-%d %H:%M:%S.%f')
+                duration = currentTime - cacheTime
+                duration_in_s = duration.total_seconds()
+                if duration_in_s < 300:
+                    await ctx.send(f'{curCursor[1]}')
+                else:
+                    c.execute("SELECT * FROM streamers WHERE twitch_id = ?", (twitch_id))
+                    curCursor = c.fetchone()
+                    # Search will return the string to be printed
+                    # curCursor format is (id, 'twitch name', 'Champions Queue name')
+                    output = factor.search(curCursor[2])
+                    if output is None:
+                        await ctx.send(f'Match not found, if this is an error, please verify !cqname is set correctly')
+                    else:
+                        # Updates cache
+                        currentTime = datetime.datetime.now()
+                        c.execute(
+                            "REPLACE into cache (team, update_time, twitch_id) VALUES (?, ?, ?) ", (
+                                output,
+                                currentTime,
+                                channel
+                            )
+                        )
+                        conn.commit()
+                        await ctx.send(f'{output}')
         # Link is sent in chat
-        await ctx.send(f'{link}')
     
     # !join command
     # Users can use !join on DeadFracture's channel to send DeadFractureBot to their channel
@@ -62,7 +141,6 @@ class Bot(commands.Bot):
         sender = str(ctx.author.name)
         # Channel command was used as a string
         curChannel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
-        
         # Can only !join on DeadFracture's channel
         if (curChannel != "deadfracture"):
             await ctx.send("Command only available on ttv/DeadFracture")
@@ -80,11 +158,50 @@ class Bot(commands.Bot):
                     channelName = str(args[0]).lower()
                     toJoin = [channelName]
                     database.add(channelName)
+                    # Adds streamer to streamers database
+                    c.execute(
+                        "INSERT OR IGNORE INTO streamers (twitch_id) VALUES (?)", (toJoin)
+                    )
+                    conn.commit()
                     await bot.join_channels(toJoin)
                     await ctx.send(f"Joined {channelName}!")
                 # If sender is not DeadFracture, bot will not be sent
                 else:
                     await ctx.send(f"I currently do not support being sent to someone else's channel :(")
+    
+    # !cqname command
+    # Associates the streamers database with a user's Twitch name with their Chmapions Queue name
+    @commands.command()
+    async def cqname(self, ctx: commands.Context, *args):
+        # Channel command as a string
+        curChannel = (str(ctx.channel)).replace("<Channel name: ", "").strip('\>')
+        if (len(args) == 0):
+            await ctx.send(f"Format is !cqname [Name]")
+        elif (len(args) == 1):
+            cqName = str(args[0]).lower()
+            # Updates database
+            c.execute(
+                "UPDATE streamers SET factor_id = ? WHERE twitch_id = ?", (
+                    cqName, 
+                    curChannel
+                )
+            )
+            conn.commit()
+            await ctx.send(f"Champions Queue name for {curChannel} set as {cqName}!")
+        else:
+            if (curChannel == "deadfracture"):
+                channelName = str(args[0]).lower()
+                cqName = ' '.join(args[1:])
+                # Updates database
+                c.execute(
+                    "UPDATE streamers SET factor_id = ? WHERE twitch_id = ?", (
+                        cqName, 
+                        channelName
+                    )
+                )
+                conn.commit()
+                await ctx.send(f"Champions Queue name for {channelName} set as {cqName}!")
+            
     
     # !leave command
     # DeadFracture bot will leave the channel when asked               
@@ -98,6 +215,11 @@ class Bot(commands.Bot):
                     return
                 toLeave = [sender]
                 database.remove(sender)
+                
+                c.execute(
+                    "DELETE FROM streamers WHERE twitchid = ?", (curChannel)
+                )
+                conn.commit()
                 await bot.part_channels(toLeave)
                 await ctx.send(f"Left {sender}'s channel!")
         else:
@@ -107,10 +229,14 @@ class Bot(commands.Bot):
                     return               
                 toLeave = [channelName]
                 database.remove(channelName)
+                c.execute(
+                    "DELETE FROM streamers WHERE twitchid = ?", (channelName)
+                )
+                conn.commit()
                 await bot.part_channels(toLeave)
                 await ctx.send(f"Left {channelName}!")
             else:
-                await ctx.send(f"I currently do not support being sent to someone else's channel :(")
+                await ctx.send(f"I currently do not support leaving someone else's channel in this way :(")
                 
     @commands.command()
     async def challenger(self, ctx: commands.Context, *args):
@@ -125,9 +251,6 @@ class Bot(commands.Bot):
     @commands.command()
     async def help(self, ctx: commands.Context):
         # Gets the channel the command was called in as a string
-        await ctx.send(f"!team (optional: username), !join, !leave")
-            
-        # Gets the lowest Challenger player in the region
         await ctx.send(f"!team (optional: username), !join, !leave")
         
 
