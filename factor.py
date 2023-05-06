@@ -32,6 +32,6 @@ def search(player):
     for games in matches:
         players = games.find_elements(By.TAG_NAME, "p")
         team = [players[i].text for i in order]
-        if player in games:
-            team = [games[i] for i in order]
+        if player in team:
+            #team = [games[i] for i in order]
             return format(team)
