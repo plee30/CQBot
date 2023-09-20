@@ -1,6 +1,6 @@
 # CQBot
 
-A Twitch bot for automatically pulling up teams for Champions Queue games.
+A Twitch bot for automatically pulling up teams for Champions Queue games. Currently deprecated and out-of-date.
 
 Based off of https://github.com/TwitchIO/TwitchIO
 
